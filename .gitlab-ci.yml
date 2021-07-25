@@ -1,0 +1,34 @@
+variables:
+  GIT_STRATEGY: clone
+before_script:
+      - 'command -v ssh-agent >/dev/null || ( yum install openssh-client -y )'
+      - eval $(ssh-agent -s)
+      - ssh-add <(echo "$SSH_PRIVATE_KEY" | base64 -d)
+      - mkdir -p ~/.ssh
+      - '[[ -f /.dockerenv ]] && echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config'
+deploy_staging:
+  type: deploy
+  environment:
+    name: staging
+  script:
+    - ssh root@serversatu.galeritekno.id  -t -t -o StrictHostKeyChecking=no "cd /home/smarter/public_html && git checkout master && git pull origin master && exit"
+  only:
+    - master
+    
+#  deploy:
+#     stage: deploy
+#     environment: production
+#     # Pull docker image
+#     image: 'mjsarfatti/gitlab-ci-pipeline-php-aws:latest'
+#     # Setup AWS CLI to have proper credential keys
+#     before_script:
+#         - 'mkdir ~/.aws/'
+#         - 'touch ~/.aws/credentials'
+#         - 'printf "[eb-cli]\naws_access_key_id = %s\naws_secret_access_key = %s\n" "$AWS_ACCESS_KEY_ID" "$AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials'
+#     # Run deployment using EB CLI deploy on master branch
+#     script:
+#         - 'git checkout master'
+#         - 'eb deploy $AWS_EB_ENVIRONMENT'
+#     # Ensure to run deployment only on master branch
+#     only:
+#         - master
